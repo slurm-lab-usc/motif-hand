@@ -1,22 +1,34 @@
 <!DOCTYPE html>
 <html>
+<head>
+<style>
+body {
+    margin: 0;
+    padding: 0;
+    background-image: url('static/img/MOTIF-Poster.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    min-height: 100vh;
+    font-family: Arial, sans-serif;
+}
+
+.message {
+    position: fixed;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    color: #2c2c2c;
+    font-size: 24px;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+    text-align: center;
+}
+</style>
+</head>
 <body>
-<b>Page Test</b> 
-<div id="time"></div>
-</body>
-<script type="text/javascript">
-const date = new Date();
-
-const year = date.getFullYear();
-const month = String(date.getMonth() + 1).padStart(2, '0'); // Month is 0-based
-const day = String(date.getUTCDate()).padStart(2, '0');
-
-const hour = String(date.getHours()).padStart(2, '0');
-const minute = String(date.getMinutes()).padStart(2, '0');
-const second = String(date.getSeconds()).padStart(2, '0');
-
-const strDate = year + "-" + month + "-" + day + " " + hour + ":" + minute + ":" + second;
-
-document.getElementById("time").innerHTML = strDate;
-</script>
+<div class="message">
+    Coming Soon! 🚀<br>Building... 💭🔨
+</div>
 </html>
