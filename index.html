@@ -123,7 +123,7 @@
       <div class="pdf-container">
         <div class="pdf-controls">
           <a
-            href="https://github.com/slurm-lab-usc/motif-hand/blob/main/static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf"
+            href="static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf"
             class="btn download"
             target="_blank"
           >
@@ -131,12 +131,126 @@
           </a>
         </div>
 
-        <iframe
-          id="pdfViewer"
-          class="pdf-viewer"
-          src="https://github.com/slurm-lab-usc/motif-hand/blob/main/static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf"
-        >
-        </iframe>
+        <div id="pdfViewer" class="pdf-viewer"></div>
+
+        <!-- Load PDF.js library -->
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+        <script>
+          // Set the PDF.js worker path
+          pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+          // The URL of the PDF file
+          const pdfUrl =
+            "static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf";
+
+          // Get device pixel ratio
+          const pixelRatio = window.devicePixelRatio || 1;
+
+          // Load and render all PDF pages at once
+          pdfjsLib
+            .getDocument(pdfUrl)
+            .promise.then(function (pdf) {
+              const numPages = pdf.numPages;
+              const viewer = document.getElementById("pdfViewer");
+              viewer.style.overflow = "auto";
+
+              // Create a container for all pages
+              const pagesContainer = document.createElement("div");
+              pagesContainer.style.cssText =
+                "display: flex; flex-direction: column; align-items: center; padding: 20px;";
+              viewer.appendChild(pagesContainer);
+
+              // Function to render a page with high quality
+              function renderPage(pageNum) {
+                return pdf.getPage(pageNum).then(function (page) {
+                  // Create a container for this page
+                  const pageContainer = document.createElement("div");
+                  pageContainer.style.cssText = "margin-bottom: 20px;";
+                  pageContainer.setAttribute("data-page-number", pageNum);
+
+                  // Create canvas for this page
+                  const canvas = document.createElement("canvas");
+                  pageContainer.appendChild(canvas);
+
+                  // Set scale - increase for higher resolution
+                  const scale = 2.0; // Higher scale for better quality
+                  const viewport = page.getViewport({ scale: scale });
+
+                  // Calculate canvas dimensions considering device pixel ratio
+                  const outputScale = pixelRatio;
+                  canvas.height = Math.floor(viewport.height * outputScale);
+                  canvas.width = Math.floor(viewport.width * outputScale);
+
+                  // Set CSS dimensions to maintain correct display size
+                  canvas.style.width = Math.floor(viewport.width) + "px";
+                  canvas.style.height = Math.floor(viewport.height) + "px";
+
+                  // Get canvas context and scale it
+                  const context = canvas.getContext("2d");
+                  context.scale(outputScale, outputScale);
+
+                  // Render PDF page into canvas context with high quality
+                  const renderContext = {
+                    canvasContext: context,
+                    viewport: viewport,
+                    enableWebGL: true,
+                    renderInteractiveForms: true,
+                  };
+
+                  return page.render(renderContext).promise.then(function () {
+                    pagesContainer.appendChild(pageContainer);
+                    return pageContainer;
+                  });
+                });
+              }
+
+              // Render first few pages immediately
+              const pagesToLoadImmediately = Math.min(3, numPages);
+              const renderPromises = [];
+
+              for (let i = 1; i <= pagesToLoadImmediately; i++) {
+                renderPromises.push(renderPage(i));
+              }
+
+              // After the first few pages are loaded, load the rest
+              Promise.all(renderPromises).then(() => {
+                // Show a loading message
+                const loadingMsg = document.createElement("div");
+                loadingMsg.textContent = "Loading remaining pages...";
+                loadingMsg.style.cssText =
+                  "text-align: center; padding: 20px; color: #666;";
+                pagesContainer.appendChild(loadingMsg);
+
+                // Load remaining pages
+                let currentPage = pagesToLoadImmediately + 1;
+
+                function loadNextPages() {
+                  if (currentPage <= numPages) {
+                    renderPage(currentPage).then(() => {
+                      // Remove loading message when all pages are loaded
+                      if (currentPage === numPages) {
+                        pagesContainer.removeChild(loadingMsg);
+                      }
+                      currentPage++;
+                      setTimeout(loadNextPages, 100); // Small delay to prevent UI freezing
+                    });
+                  }
+                }
+
+                loadNextPages();
+              });
+            })
+            .catch(function (error) {
+              console.error("Error loading PDF:", error);
+              document.getElementById("pdfViewer").innerHTML = `
+              <div style="text-align: center; padding: 50px;">
+                <p>Failed to load the PDF. Please try downloading it directly.</p>
+                <a href="static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf" class="btn" style="margin-top: 20px;">Download PDF</a>
+              </div>
+            `;
+            });
+        </script>
       </div>
     </div>
   </body>
