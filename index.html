@@ -137,7 +137,7 @@
         opacity: 1;
       }
 
-      /* fallback 背景渐变 */
+      /* fallback 背景 - 简单的灰色 */
       .hero-section::before {
         content: "";
         position: absolute;
@@ -145,12 +145,7 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(
-          135deg,
-          #667eea 0%,
-          #764ba2 50%,
-          #f093fb 100%
-        );
+        background: #f8f9fa;
         z-index: -2;
       }
 
@@ -209,11 +204,71 @@
         border: 1px solid #ddd;
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        overflow: auto;
+        /* 启用触摸缩放 */
+        touch-action: pan-x pan-y pinch-zoom;
+      }
+
+      .pdf-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        gap: 20px;
+        /* 移动端支持手势缩放 */
+        transform-origin: center top;
+      }
+
+      .pdf-page {
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        max-width: 100%;
+        height: auto;
+      }
+
+      .pdf-page canvas {
+        max-width: 100%;
+        height: auto;
+        display: block;
       }
 
       @media (max-width: 768px) {
         .pdf-viewer {
           height: 600px;
+          /* 确保移动端可以缩放 */
+          touch-action: manipulation;
+        }
+
+        .pdf-content {
+          padding: 10px;
+        }
+      }
+
+      /* PDF 控制按钮美化 */
+      .pdf-control-btn {
+        background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+        color: white;
+        border: none;
+        padding: 10px 22px;
+        margin: 0 6px;
+        border-radius: 18px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(116, 185, 255, 0.18);
+        outline: none;
+        display: inline-block;
+      }
+      .pdf-control-btn:hover {
+        background: linear-gradient(135deg, #5f9ee8 0%, #0770c7 100%);
+        box-shadow: 0 4px 16px rgba(116, 185, 255, 0.28);
+        transform: translateY(-1px);
+      }
+      @media (max-width: 768px) {
+        .pdf-control-btn {
+          padding: 8px 14px;
+          font-size: 14px;
         }
       }
     </style>
@@ -243,7 +298,9 @@
           </a>
         </div>
 
-        <div id="pdfViewer" class="pdf-viewer"></div>
+        <div id="pdfViewer" class="pdf-viewer">
+          <div class="pdf-content" id="pdfContent"></div>
+        </div>
 
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <script>
@@ -253,93 +310,78 @@
           const pdfUrl =
             "static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf";
 
-          const pixelRatio = window.devicePixelRatio || 1;
+          let pdfDoc = null;
+          // 默认缩放比例为1，用户可用浏览器自带缩放/手势
+          let currentScale = 1.0;
 
+          const pdfContent = document.getElementById("pdfContent");
+
+          // 渲染所有页面
+          function renderAllPages() {
+            if (!pdfDoc) return;
+            pdfContent.innerHTML = "";
+            const pagesContainer = document.createElement("div");
+            pagesContainer.className = "pdf-page-container";
+            pdfContent.appendChild(pagesContainer);
+            const renderPromises = [];
+            for (let pageNum = 1; pageNum <= pdfDoc.numPages; pageNum++) {
+              renderPromises.push(renderPage(pageNum, pagesContainer));
+            }
+            return Promise.all(renderPromises);
+          }
+
+          // 渲染单个页面
+          function renderPage(pageNum, container) {
+            return pdfDoc.getPage(pageNum).then(function (page) {
+              const pageContainer = document.createElement("div");
+              pageContainer.className = "pdf-page";
+              pageContainer.setAttribute("data-page-number", pageNum);
+              const canvas = document.createElement("canvas");
+              pageContainer.appendChild(canvas);
+              const context = canvas.getContext("2d");
+              const viewport = page.getViewport({ scale: currentScale });
+              const pixelRatio = window.devicePixelRatio || 1;
+              canvas.height = Math.floor(viewport.height * pixelRatio);
+              canvas.width = Math.floor(viewport.width * pixelRatio);
+              canvas.style.width = Math.floor(viewport.width) + "px";
+              canvas.style.height = Math.floor(viewport.height) + "px";
+              context.scale(pixelRatio, pixelRatio);
+              const renderContext = {
+                canvasContext: context,
+                viewport: viewport,
+                enableWebGL: true,
+                renderInteractiveForms: true,
+              };
+              return page.render(renderContext).promise.then(function () {
+                container.appendChild(pageContainer);
+                return pageContainer;
+              });
+            });
+          }
+
+          // 加载 PDF
           pdfjsLib
             .getDocument(pdfUrl)
             .promise.then(function (pdf) {
-              const numPages = pdf.numPages;
-              const viewer = document.getElementById("pdfViewer");
-              viewer.style.overflow = "auto";
-
-              const pagesContainer = document.createElement("div");
-              pagesContainer.style.cssText =
-                "display: flex; flex-direction: column; align-items: center; padding: 20px;";
-              viewer.appendChild(pagesContainer);
-
-              function renderPage(pageNum) {
-                return pdf.getPage(pageNum).then(function (page) {
-                  const pageContainer = document.createElement("div");
-                  pageContainer.style.cssText = "margin-bottom: 20px;";
-                  pageContainer.setAttribute("data-page-number", pageNum);
-
-                  const canvas = document.createElement("canvas");
-                  pageContainer.appendChild(canvas);
-
-                  const scale = 2.0;
-                  const viewport = page.getViewport({ scale: scale });
-
-                  const outputScale = pixelRatio;
-                  canvas.height = Math.floor(viewport.height * outputScale);
-                  canvas.width = Math.floor(viewport.width * outputScale);
-
-                  canvas.style.width = Math.floor(viewport.width) + "px";
-                  canvas.style.height = Math.floor(viewport.height) + "px";
-
-                  const context = canvas.getContext("2d");
-                  context.scale(outputScale, outputScale);
-
-                  const renderContext = {
-                    canvasContext: context,
-                    viewport: viewport,
-                    enableWebGL: true,
-                    renderInteractiveForms: true,
-                  };
-
-                  return page.render(renderContext).promise.then(function () {
-                    pagesContainer.appendChild(pageContainer);
-                    return pageContainer;
-                  });
+              pdfDoc = pdf;
+              // 桌面端自动fit width
+              if (!/Mobi|Android/i.test(navigator.userAgent)) {
+                pdfDoc.getPage(1).then(function (page) {
+                  // 容器宽度减去padding
+                  const containerWidth = pdfContent.clientWidth - 40;
+                  const pageWidth = page.getViewport({ scale: 1.0 }).width;
+                  currentScale = containerWidth / pageWidth;
+                  renderAllPages();
                 });
+              } else {
+                renderAllPages();
               }
-
-              const pagesToLoadImmediately = Math.min(3, numPages);
-              const renderPromises = [];
-
-              for (let i = 1; i <= pagesToLoadImmediately; i++) {
-                renderPromises.push(renderPage(i));
-              }
-
-              Promise.all(renderPromises).then(() => {
-                const loadingMsg = document.createElement("div");
-                loadingMsg.textContent = "Loading remaining pages...";
-                loadingMsg.style.cssText =
-                  "text-align: center; padding: 20px; color: #666;";
-                pagesContainer.appendChild(loadingMsg);
-
-                let currentPage = pagesToLoadImmediately + 1;
-
-                function loadNextPages() {
-                  if (currentPage <= numPages) {
-                    renderPage(currentPage).then(() => {
-                      if (currentPage === numPages) {
-                        pagesContainer.removeChild(loadingMsg);
-                      }
-                      currentPage++;
-                      setTimeout(loadNextPages, 100);
-                    });
-                  }
-                }
-
-                loadNextPages();
-              });
             })
             .catch(function (error) {
-              console.error("Error loading PDF:", error);
-              document.getElementById("pdfViewer").innerHTML = `
+              pdfContent.innerHTML = `
               <div style="text-align: center; padding: 50px;">
-                <p>Failed to load the PDF. Please try downloading it directly.</p>
-                <a href="static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf" class="btn" style="margin-top: 20px;">Download PDF</a>
+                <p>PDF failed to load, please try to download directly.</p>
+                <a href="${pdfUrl}" class="btn" style="margin-top: 20px;">📄 Download PDF</a>
               </div>
             `;
             });
