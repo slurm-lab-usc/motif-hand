@@ -8,6 +8,7 @@
     </script>
     <title>MOTIF-Hand 👋</title>
     <link rel="icon" type="image/jpeg" href="static/img/usc_icon.jpg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <style>
       body {
         margin: 0;
@@ -16,13 +17,10 @@
       }
 
       .hero-section {
-        background-image: url("static/img/MOTIF-Poster.png");
-        background-size: cover;
-        background-position: center;
-        background-repeat: no-repeat;
-        background-attachment: fixed;
-        height: 100vh;
         position: relative;
+        width: 100%;
+        min-height: 100vh;
+        overflow: hidden;
         display: flex;
         align-items: flex-end;
         justify-content: center;
@@ -30,12 +28,130 @@
         box-sizing: border-box;
       }
 
+      /* 16:9 比例容器 */
+      .hero-bg-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+      }
+
+      .hero-bg-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        transition: opacity 0.3s ease;
+      }
+
+      /* 桌面端：保持 cover 效果 */
+      @media (min-width: 769px) {
+        .hero-bg-image {
+          object-fit: cover;
+        }
+      }
+
+      /* 移动端：智能适配 */
+      @media (max-width: 768px) {
+        .hero-section {
+          /* 为移动端设置合适的最小高度 */
+          min-height: 70vh;
+        }
+
+        /* 如果屏幕比例接近16:9，使用cover */
+        .hero-bg-image {
+          object-fit: cover;
+        }
+
+        /* 对于很窄的屏幕（比如手机竖屏），确保内容可见 */
+        @media (max-aspect-ratio: 9/16) {
+          .hero-section {
+            min-height: 60vh;
+          }
+
+          .hero-bg-image {
+            object-fit: cover;
+            object-position: center top; /* 显示图片上半部分 */
+          }
+        }
+      }
+
+      /* 超宽屏幕优化 */
+      @media (min-aspect-ratio: 21/9) {
+        .hero-bg-image {
+          object-fit: cover;
+          object-position: center;
+        }
+      }
+
+      /* 渐变遮罩，确保文字可读性 */
+      .hero-section::after {
+        content: "";
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 200px;
+        background: linear-gradient(
+          to top,
+          rgba(0, 0, 0, 0.3) 0%,
+          transparent 100%
+        );
+        pointer-events: none;
+        z-index: 1;
+      }
+
       .message {
-        color: #2c2c2c;
+        color: white;
         font-size: 24px;
         font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
         text-align: center;
+        z-index: 10;
+        position: relative;
+        background: rgba(0, 0, 0, 0.4);
+        padding: 20px 30px;
+        border-radius: 15px;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+      }
+
+      /* 移动端文字调整 */
+      @media (max-width: 768px) {
+        .message {
+          font-size: 18px;
+          padding: 15px 20px;
+          margin: 0 20px;
+        }
+      }
+
+      /* 加载状态 */
+      .hero-bg-image {
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      .hero-bg-image.loaded {
+        opacity: 1;
+      }
+
+      /* fallback 背景渐变 */
+      .hero-section::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(
+          135deg,
+          #667eea 0%,
+          #764ba2 50%,
+          #f093fb 100%
+        );
+        z-index: -2;
       }
 
       .pdf-section {
@@ -47,23 +163,6 @@
       .pdf-container {
         max-width: 1200px;
         margin: 0 auto;
-      }
-
-      .pdf-header {
-        text-align: center;
-        margin-bottom: 30px;
-      }
-
-      .pdf-header h2 {
-        font-size: 28px;
-        color: #333;
-        margin-bottom: 10px;
-      }
-
-      .pdf-header p {
-        font-size: 16px;
-        color: #666;
-        margin-bottom: 20px;
       }
 
       .pdf-controls {
@@ -85,8 +184,6 @@
         font-weight: 500;
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(116, 185, 255, 0.3);
-        position: relative;
-        overflow: hidden;
       }
 
       .btn:hover {
@@ -95,8 +192,15 @@
         background: linear-gradient(135deg, #5f9ee8 0%, #0770c7 100%);
       }
 
-      .btn:active {
-        transform: translateY(0);
+      @media (max-width: 768px) {
+        .btn {
+          padding: 12px 24px;
+          font-size: 14px;
+        }
+
+        .pdf-section {
+          padding: 20px 10px;
+        }
       }
 
       .pdf-viewer {
@@ -107,18 +211,26 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
       }
 
-      .scroll-hint {
-        text-align: center;
-        margin-top: 20px;
-        color: #666;
-        font-style: italic;
+      @media (max-width: 768px) {
+        .pdf-viewer {
+          height: 600px;
+        }
       }
     </style>
   </head>
   <body>
     <div class="hero-section">
+      <div class="hero-bg-container">
+        <img
+          src="static/img/MOTIF-Poster.png"
+          alt="MOTIF Hand"
+          class="hero-bg-image"
+          onload="this.classList.add('loaded')"
+        />
+      </div>
       <div class="message">More Details Coming Soon! 🚀</div>
     </div>
+
     <div class="pdf-section">
       <div class="pdf-container">
         <div class="pdf-controls">
@@ -133,21 +245,16 @@
 
         <div id="pdfViewer" class="pdf-viewer"></div>
 
-        <!-- Load PDF.js library -->
         <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
         <script>
-          // Set the PDF.js worker path
           pdfjsLib.GlobalWorkerOptions.workerSrc =
             "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
 
-          // The URL of the PDF file
           const pdfUrl =
             "static/pdf/The_MOTIF_Hand__A_Robotic_Hand_for_Multimodal_Observations_with_Thermal__Inertial__and_Force_Sensors.pdf";
 
-          // Get device pixel ratio
           const pixelRatio = window.devicePixelRatio || 1;
 
-          // Load and render all PDF pages at once
           pdfjsLib
             .getDocument(pdfUrl)
             .promise.then(function (pdf) {
@@ -155,42 +262,33 @@
               const viewer = document.getElementById("pdfViewer");
               viewer.style.overflow = "auto";
 
-              // Create a container for all pages
               const pagesContainer = document.createElement("div");
               pagesContainer.style.cssText =
                 "display: flex; flex-direction: column; align-items: center; padding: 20px;";
               viewer.appendChild(pagesContainer);
 
-              // Function to render a page with high quality
               function renderPage(pageNum) {
                 return pdf.getPage(pageNum).then(function (page) {
-                  // Create a container for this page
                   const pageContainer = document.createElement("div");
                   pageContainer.style.cssText = "margin-bottom: 20px;";
                   pageContainer.setAttribute("data-page-number", pageNum);
 
-                  // Create canvas for this page
                   const canvas = document.createElement("canvas");
                   pageContainer.appendChild(canvas);
 
-                  // Set scale - increase for higher resolution
-                  const scale = 2.0; // Higher scale for better quality
+                  const scale = 2.0;
                   const viewport = page.getViewport({ scale: scale });
 
-                  // Calculate canvas dimensions considering device pixel ratio
                   const outputScale = pixelRatio;
                   canvas.height = Math.floor(viewport.height * outputScale);
                   canvas.width = Math.floor(viewport.width * outputScale);
 
-                  // Set CSS dimensions to maintain correct display size
                   canvas.style.width = Math.floor(viewport.width) + "px";
                   canvas.style.height = Math.floor(viewport.height) + "px";
 
-                  // Get canvas context and scale it
                   const context = canvas.getContext("2d");
                   context.scale(outputScale, outputScale);
 
-                  // Render PDF page into canvas context with high quality
                   const renderContext = {
                     canvasContext: context,
                     viewport: viewport,
@@ -205,7 +303,6 @@
                 });
               }
 
-              // Render first few pages immediately
               const pagesToLoadImmediately = Math.min(3, numPages);
               const renderPromises = [];
 
@@ -213,27 +310,23 @@
                 renderPromises.push(renderPage(i));
               }
 
-              // After the first few pages are loaded, load the rest
               Promise.all(renderPromises).then(() => {
-                // Show a loading message
                 const loadingMsg = document.createElement("div");
                 loadingMsg.textContent = "Loading remaining pages...";
                 loadingMsg.style.cssText =
                   "text-align: center; padding: 20px; color: #666;";
                 pagesContainer.appendChild(loadingMsg);
 
-                // Load remaining pages
                 let currentPage = pagesToLoadImmediately + 1;
 
                 function loadNextPages() {
                   if (currentPage <= numPages) {
                     renderPage(currentPage).then(() => {
-                      // Remove loading message when all pages are loaded
                       if (currentPage === numPages) {
                         pagesContainer.removeChild(loadingMsg);
                       }
                       currentPage++;
-                      setTimeout(loadNextPages, 100); // Small delay to prevent UI freezing
+                      setTimeout(loadNextPages, 100);
                     });
                   }
                 }
