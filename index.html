@@ -339,12 +339,21 @@
               const canvas = document.createElement("canvas");
               pageContainer.appendChild(canvas);
               const context = canvas.getContext("2d");
-              const viewport = page.getViewport({ scale: currentScale });
+              // 判断是否移动端
+              const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+              const scale = isMobile ? 1.0 : currentScale;
+              const viewport = page.getViewport({ scale: scale });
               const pixelRatio = window.devicePixelRatio || 1;
               canvas.height = Math.floor(viewport.height * pixelRatio);
               canvas.width = Math.floor(viewport.width * pixelRatio);
-              canvas.style.width = Math.floor(viewport.width) + "px";
-              canvas.style.height = Math.floor(viewport.height) + "px";
+              // 移动端：canvas.style 用实际像素，桌面端：铺满
+              if (isMobile) {
+                canvas.style.width = Math.floor(viewport.width) + "px";
+                canvas.style.height = Math.floor(viewport.height) + "px";
+              } else {
+                canvas.style.width = Math.floor(viewport.width) + "px";
+                canvas.style.height = Math.floor(viewport.height) + "px";
+              }
               context.scale(pixelRatio, pixelRatio);
               const renderContext = {
                 canvasContext: context,
