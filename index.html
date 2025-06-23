@@ -222,7 +222,7 @@
       .pdf-page {
         border: 1px solid #ddd;
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        max-width: 100%;
+        width: fit-content;
         height: auto;
       }
 
@@ -235,12 +235,17 @@
       @media (max-width: 768px) {
         .pdf-viewer {
           height: 600px;
-          /* 确保移动端可以缩放 */
           touch-action: manipulation;
         }
-
         .pdf-content {
+          display: block;
           padding: 10px;
+          overflow-x: auto;
+          width: auto;
+        }
+        .pdf-page {
+          width: auto;
+          margin: 0 auto 20px auto;
         }
       }
 
